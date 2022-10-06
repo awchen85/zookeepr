@@ -2,11 +2,13 @@ const express = require('express');
 const { animals } = require('./data/animals');
 const fs = require('fs');
 const path= require('path');
+const { allowedNodeEnvironmentFlags } = require('process');
 
 
 const PORT = process.env.PORT || 3001;
 const app = express();
 
+app.use(express.static('public'));
 // parse incoming string or array data
 app.use(express.urlencoded({ extended: true }));
 //parse incoming JSON data
@@ -65,7 +67,21 @@ function createNewAnimal(body, animalsArray) {
     );
     return animal;
 }
-
+function validateAnimal(animal) {
+    if (!animal.name || typeof animal.name !== 'string') {
+        return false;
+    }
+    if (!animal.species || typeof animal.species !== 'string') {
+        return false;
+    }
+    if (!animal.diet || typeof animal.diet !== 'string') {
+        return false;
+    }
+    if (!animal.personalityTraits || !Array.isArray(animal.personalityTraits)) {
+        return false;
+    }
+    return true;
+}
 app.get('/api/animals', (req, res) => {
     let results = animals;
     if (req.query) {
@@ -95,22 +111,25 @@ res.json(animal);
 }
 });
 
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/index.html'));
+});
+//get animals html from server when directed to webpage
+app.get('/animals', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/animals.html'));
+});
+//get zookeepers html from server when directed to webpage
+app.get('/zookeepers', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/zookeepers.html'));
+});
+//"wildcard" page, just in case. This route should always come last.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/index.html'));
+});
+
+
+
 app.listen(PORT, () => {
     console.log(`API server now on port ${PORT}!`);
 });
 
-function validateAnimal(animal) {
-    if (!animal.name || typeof animal.name !== 'string') {
-        return false;
-    }
-    if (!animal.species || typeof animal.species !== 'string') {
-        return false;
-    }
-    if (!animal.diet || typeof animal.diet !== 'string') {
-        return false;
-    }
-    if (!animal.personalityTraits || !Array.isArray(animal.personalityTraits)) {
-        return false;
-    }
-    return true;
-}
